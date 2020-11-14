@@ -94,6 +94,7 @@
               <executable>npm</executable>
               <arguments>
                 <argument>install</argument>
+                <argument>--fix</argument>
               </arguments>
             </configuration>
           </execution>

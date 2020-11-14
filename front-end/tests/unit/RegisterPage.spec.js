@@ -1,13 +1,16 @@
 import { mount, createLocalVue } from '@vue/test-utils'
 import VueRouter from 'vue-router'
 import RegisterPage from '@/views/RegisterPage'
-
+import Vuelidate from 'vuelidate'
+import registrationService from '@/services/registration'
 
 // vm.$router에 접근할 수 있도록
 // 테스트에 Vue Router 추가하기
 const localVue = createLocalVue()
 localVue.use(VueRouter)
 const router = new VueRouter()
+
+localVue.use(Vuelidate)
 
 // registerationService의 mock
 jest.mock('@/services/registration')
@@ -18,6 +21,7 @@ describe('RegisterPage.vue', () => {
   let fieldEmailAddress
   let fieldPassword
   let buttonSubmit
+  let registerSpy
 
   beforeEach(() => {
     wrapper = mount(RegisterPage, {
@@ -29,6 +33,13 @@ describe('RegisterPage.vue', () => {
     fieldEmailAddress = wrapper.find('#emailAddress')
     fieldPassword = wrapper.find('#password')
     buttonSubmit = wrapper.find('form button[type="submit"]')
+
+    registerSpy = jest.spyOn(registrationService, 'register')
+  })
+
+  afterEach(() => {
+    registerSpy.mockReset()
+    registerSpy.mockRestore()
   })
 
   afterAll(() => {
@@ -83,30 +94,67 @@ describe('RegisterPage.vue', () => {
     expect(stub).toBeCalled()
   })
 
-  it('should register when it is a new user', () => {
+  it('should register when it is a new user', async () => {
+    expect.assertions(2)
+
     const stub = jest.fn()
     wrapper.vm.$router.push = stub
 
     wrapper.vm.form.username = 'sunny'
-    wrapper.vm.form.emailAddress = 'sunny@local'
-    wrapper.vm.form.password = 'Jest!'
+    wrapper.vm.form.emailAddress = 'sunny@taskagile.com'
+    wrapper.vm.form.password = 'JestRocks!'
 
     wrapper.vm.submitForm()
+    expect(registerSpy).toBeCalled()
 
-    wrapper.vm.$nextTick(() => {
-      expect(stub).toHaveBeenCalledWith({name: 'LoginPage'})
-    })
+    await wrapper.vm.$nextTick()
+    expect(stub).toHaveBeenCalledWith({name: 'LoginPage'})
   })
 
-  it('should fail it is not a new user', () => {
-    // mock에서는 오직 sunny@local만 새로운 사용자다
-    wrapper.vm.form.emailAddress = 'ted@local'
+  it('should fail it is not a new user', async () => {
+    expect.assertions(2)
+    // mock에서는 오직 sunny@taskagile.com만 새로운 사용자다
+    wrapper.vm.form.username = 'ted'
+    wrapper.vm.form.emailAddress = 'ted@taskagile.com'
+    wrapper.vm.form.password = 'JestRocks!'
+
     expect(wrapper.find('.failed').isVisible()).toBe(false)
 
     wrapper.vm.submitForm()
+    expect(registerSpy).toBeCalled()
 
-    wrapper.vm.$nextTick(null, () => {
+    await wrapper.vm.$nextTick(null, () => {
       expect(wrapper.find('.failed').isVisible()).toBe(true)
     })
+  })
+
+  it('should fail when the email address is invalid', () => {
+    wrapper.vm.form.username = 'test'
+    wrapper.vm.form.emailAddress = 'bad-email-address'
+    wrapper.vm.form.password = 'JestRocks!'
+
+    wrapper.vm.submitForm()
+
+    expect(registerSpy).not.toHaveBeenCalled()
+  })
+
+  it('should fail when the username is invalid', () => {
+    wrapper.vm.form.username = 'a'
+    wrapper.vm.form.emailAddress = 'test@taskagile.com'
+    wrapper.vm.form.password = 'JestRocks!'
+
+    wrapper.vm.submitForm()
+
+    expect(registerSpy).not.toHaveBeenCalled()
+  })
+
+  it('should fail when the password is invalid', () => {
+    wrapper.vm.form.username = 'test'
+    wrapper.vm.form.emailAddress = 'test@taskagile.com'
+    wrapper.vm.form.password = 'bad!'
+
+    wrapper.vm.submitForm()
+
+    expect(registerSpy).not.toHaveBeenCalled()
   })
 })
