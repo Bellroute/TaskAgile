@@ -64,7 +64,7 @@
   import registrationService from '@/services/registration'
   import {alphaNum, email, maxLength, minLength, required} from 'vuelidate/lib/validators'
   import Logo from "@/components/Logo";
-  import PageFooter from "@/components/PageFooter.Vue";
+  import PageFooter from "@/components/PageFooter.vue";
 
   export default {
     name: 'RegisterPage',
